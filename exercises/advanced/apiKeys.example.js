@@ -1,0 +1,6 @@
+module.exports = {
+  CLARIFAI_CLIENT_ID: '',
+  CLARIFAI_CLIENT_SECRET: '',
+  GITHUB_CLIENT_ID: '',
+  GITHUB_CLIENT_SECRET: ''
+};
