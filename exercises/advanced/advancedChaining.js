@@ -16,14 +16,39 @@
 
 var Promise = require('bluebird');
 var lib = require('../../lib/advancedChainingLib.js');
+var keys = require('./apiKeys');
 
 // We're using Clarifai's API to recognize different an image into a list of tags
 // Visit the following url to sign up for a free account
 //     https://developer.clarifai.com/accounts/login/?next=/applications/
 // Then, create a new Application and pass your Client Id and Client Secret into the method below
-lib.setImageTaggerCredentials('YOUR_CLIENT_ID', 'YOUR_CLIENT_SECRET')
+lib.setImageTaggerCredentials(keys.CLARIFAI_CLIENT_ID,
+  keys.CLARIFAI_CLIENT_SECRET);
+lib.setGitHubCredentials(keys.GITHUB_CLIENT_ID, keys.GITHUB_CLIENT_SECRET);
 
 var searchCommonTagsFromGitHubProfiles = function(githubHandles) {
+  return Promise.all(
+    githubHandles.map(user => lib.getGitHubProfile(user))
+  )
+  .then(profiles => profiles.map(profile => profile.avatarUrl))
+  .then(function(avatarUrls) {
+    var result = [];
+    result[0] = avatarUrls;
+    result[1] = lib.authenticateImageTagger();
+    return Promise.all(result);
+  })
+  .then(result => {
+    return Promise.all(
+      result[0].map(url => lib.tagImage(url, result[1]))
+    );
+  })
+  .then(tagsArray => {
+    return lib.getIntersection(tagsArray);
+  })
+  .catch(e => {
+    console.log('Error!!!!!!!!!!!!!!!!!');
+    console.log(e);
+  });
 };
 
 // Export these functions so we can unit test them
