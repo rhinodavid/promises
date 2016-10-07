@@ -15,7 +15,23 @@ var Promise = require('bluebird');
  */
 
 var promisify = function(nodeStyleFn) {
- // TODO
+
+  var promiseFunction = function() {
+    var args = Array.prototype.slice.call(arguments);  
+
+    return new Promise(function(resolve, reject) {
+      var cb = function(err, data) {
+        if (err) {
+          return reject(err);
+        } else {
+          return resolve(data);
+        }
+      };
+      nodeStyleFn.apply(this, args.concat(cb));
+    });
+  };
+
+  return promiseFunction;
 };
 
 
@@ -31,9 +47,30 @@ var promisify = function(nodeStyleFn) {
  */
 
 var all = function(arrayOfPromises) {
-  // TODO
-};
 
+  return new Promise((resolve, reject) => {
+
+    var counter = 0;
+    var results = Array(arrayOfPromises.length);
+
+    var checkComplete = function() {
+      if (counter === arrayOfPromises.length) {
+        return resolve(results);
+      }
+    };
+
+    for (var i = 0; i < arrayOfPromises.length; i++) {
+      arrayOfPromises[i].then(function(result) {
+        var index = this;
+        counter++;
+        results[index] = result;
+        checkComplete();
+      }.bind(i));
+      arrayOfPromises[i].catch(function(err) { reject(err); });
+    }
+    
+  });
+};
 
 /**
  * Given an array of promises, return a promise that is resolved or rejected,
@@ -42,7 +79,18 @@ var all = function(arrayOfPromises) {
  */
 
 var race = function(arrayOfPromises) {
-  // TODO
+
+  return new Promise((resolve, reject) => {
+    for (var i = 0; i < arrayOfPromises.length; i++) {
+      arrayOfPromises[i].then(function(result) {
+        resolve(result);
+      });
+      arrayOfPromises[i].catch(function(err) {
+        reject(err);
+      });
+    }
+  });
+
 };
 
 // Export these functions so we can unit test them
